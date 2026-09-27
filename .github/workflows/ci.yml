@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --no-default-features --all-targets -- -D warnings
+      - run: cargo test --no-default-features
+
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/nanotoken
+          key: hf-hub-${{ hashFiles('tests/conftest.py', 'tests/test_hf_compat.py') }}
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu
+          .venv/bin/pip install maturin numpy pytest ruff tokenizers transformers
+      - name: Lint
+        run: |
+          .venv/bin/ruff check nanotoken tests examples
+          .venv/bin/ruff format --check nanotoken tests examples
+          cargo clippy --all-targets -- -D warnings
+        env:
+          PYO3_PYTHON: ${{ github.workspace }}/.venv/bin/python
+      - name: Build
+        run: |
+          source .venv/bin/activate
+          maturin develop --release
+      - name: Test
+        run: .venv/bin/pytest -v

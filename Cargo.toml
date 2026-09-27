@@ -1,0 +1,40 @@
+[package]
+name = "nanotoken"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Fast WordPiece tokenization with exact HuggingFace parity"
+
+[lib]
+name = "nanotoken_rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["python"]
+python = ["dep:pyo3", "dep:numpy"]
+
+[dependencies]
+aho-corasick = "1.1"
+memchr = "2.8"
+memmap2 = "0.9"
+numpy = { version = "0.29", optional = true }
+pyo3 = { version = "0.29", features = ["abi3-py310"], optional = true }
+rayon = "1.12"
+regex = "1.13"
+rustc-hash = "2.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+unicode-normalization-alignments = "0.1"
+unicode_categories = "0.1"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
+[profile.bench]
+inherits = "release"
+debug = true
+
+[[bench]]
+name = "encode"
+harness = false
