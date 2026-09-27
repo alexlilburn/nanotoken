@@ -41,13 +41,11 @@ nanotoken bench BAAI/bge-small-en-v1.5 owt_valid.txt --separator "<|endoftext|>"
 
 ## Installation
 
-The repository is private, so install from source. You need a Rust toolchain (`rustup`, stable) and Python 3.10+:
-
 ```bash
-pip install "git+ssh://git@github.com/alexlilburn/nanotoken.git"
+pip install nanotoken
 ```
 
-Alternatively, download a prebuilt abi3 wheel from the "wheels" GitHub Actions workflow artifacts.
+Prebuilt abi3 wheels cover Python 3.10+ on Linux (x86_64, aarch64), macOS (Apple Silicon, Intel) and Windows (x64). Other platforms build from the source distribution, which needs a Rust toolchain.
 
 ## Usage
 
